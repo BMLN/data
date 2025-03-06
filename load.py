@@ -54,7 +54,7 @@ def sourcelist():
 
 
 #read
-def load_file(file_path, file_type="csv", separator=",", compression="infer", encoding=None, chunk_size=None):
+def from_file(file_path, file_type="csv", separator=",", compression="infer", encoding=None, chunk_size=None):
     assert path.isfile(file_path)
     assert file_type in ["csv", "json", "xlsx", "parquet"]
 
@@ -77,7 +77,7 @@ def load_file(file_path, file_type="csv", separator=",", compression="infer", en
         "encoding": encoding,
         "chunksize": chunk_size
     }
-    kwargs = { k: v.default if k not in kwargs else kwargs[k] for k, v in list(signature(reader).parameters.items())[1:] }
+    kwargs = { k: v.default if k not in kwargs else kwargs[k] for k, v in list(signature(reader).parameters.items())[1:] if v.default is not Parameter.empty or k in kwargs }
 
 
     data = reader(
@@ -137,7 +137,7 @@ if __name__ == "__main__":
             print("nopull", x)
             
         
-        data = load_file(file_loc, file_type, "\t", "gzip", "utf-8", 1000)
+        data = from_file(file_loc, file_type, "\t", "gzip", "utf-8", 1000)
 
         for i, y in enumerate(data):
             print(y.head())
