@@ -8,6 +8,7 @@ import gzip
 import ijson
 import pandas as pd
 
+from random import randint
 
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,10 @@ def from_file(file_path, file_type="csv", separator=",", compression="infer", en
 #Lazily reads a large JSON file in chunks and processes each chunk using a custom function.
 def __json_chunk_iterator(file_path, encoding=None, chunk_size=1000, process_func=None):
 
-    with gzip.open(file_path, 'rt', encoding=encoding) as f:
+    reader = open if not file_path.endswith(".gz") else gzip.open
+
+    #with gzip.open(file_path, "rt", encoding=encoding) as f:
+    with reader(file_path, "rt", encoding=encoding) as f:
         rows = []
         for record in ijson.items(f, "item"):  # "item" depends on JSON structure
             rows.append(record)
@@ -110,38 +114,81 @@ def __json_chunk_iterator(file_path, encoding=None, chunk_size=1000, process_fun
 
 
 
+def __mem_check_line(file_path, sample_count=1000, skip_header=False):
+    file_size = path.getsize(file_path)
+    byte_range = file_size // sample_count
+    samples = []
+
+
+    if byte_range <= 1:
+        raise ValueError(f"too many samples for file: {file_size}/{sample_count}")
+        
+
+    with open(file_path, 'rb') as f:
+        if skip_header:
+            overhead = 0
+        else:
+            overhead = len(f.readline()) #firstline == expected to be column names   
+            #f.read(1) #set pointer on first data line
+
+        for _ in range(sample_count):
+            offset = randint(0, min(byte_range, file_size - f.tell())) #offset = 0 kinda meh but alright
+            
+
+            if (f.seek(f.tell() + offset - 1)) or f.read(1) in {b"\n", b"\r"} == False: #only take "full/new" line, discard otherwise 
+                f.readline()
+
+            if not (line := f.readline()).strip() == b"": #dont want empty lines (+EOFline) in estimation
+                samples.append(len(line))
+
+    if not samples:
+        raise RuntimeError("No valid lines sampled")
+
+
+    return (overhead + sum(samples)) / len(samples), len(samples)
 
 
 
+def estimate_chunks(file_path, designated_memorybytes, load=0.5):
+    assert path.isfile(file_path)
+    assert 0 < load < 1
+
+    sample_count = min(path.getsize(file_path) / 1000, 10000)
+    sampling = __mem_check_line(file_path, sample_count)
+    estimation = (designated_memorybytes * load) /sampling[0]
+    
+    PD_OVERHEAD = 3
+
+    
+    return estimation / PD_OVERHEAD
 
 
 
 
 if __name__ == "__main__":
-
+    from benchmark import memory_benchmark
+    import gc
+    
     logging.basicConfig(level=logging.INFO)
 
     print(sourcelist())
     # File path
-    file_path = 'Q:/HuggingFace_cache/self/'
+    file_path = 'D:/HuggingFace/cache/self/'
+    d_path = r"D:\HuggingFace\cache\self\biencoder-nq-train.json"
+    
+    #pull(sourcelist()["DPR_SOURCE_NQ"], path.join(file_path, "nq.json.gz"))    
+    #exit()   
+    print(estimate_chunks(d_path, 4000000, 0.5))
 
 
-    for x in sourcelist().values():
-        file_loc = path.join(file_path, path.split(x)[1])
-        file_type = path.split(x)[1].split(".")[-2]
-        file_type = "csv" if file_type == "tsv" else file_type
+    #gc.collect()
+    #memory_benchmark(lambda: pd.read_json(r"D:\HuggingFace\cache\self\biencoder-nq-train.json"))()   
 
-        if not path.isfile(file_loc):
-            pull(x, file_loc)    
-        else:
-            print("nopull", x)
+    gc.collect()
+    def iterate_all():
+        for x in from_file(d_path, "json", chunk_size=10000):
+            del x
+            gc.collect()
+            raise Exception
             
-        
-        data = from_file(file_loc, file_type, "\t", "gzip", "utf-8", 1000)
-
-        for i, y in enumerate(data):
-            print(y.head())
-
-            if i >= 5:
-                break
-
+    memory_benchmark(iterate_all)()

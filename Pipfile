@@ -7,7 +7,7 @@ name = "pypi"
 pandas = "*"
 requests = "*"
 ijson = "*"
-gzip = "*"
+psutil = "*"
 
 [dev-packages]
 
