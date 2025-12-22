@@ -12,6 +12,6 @@ dependencies = [
 ]
 [tool.uv_build]
 packages = [
-    { include = "data", from = "src" }
+    { include = "data", from = "src" },
     { include = "performance", from = "src" }
 ]
