@@ -5,7 +5,7 @@ import requests
 from inspect import signature, Parameter
 
 import gzip
-import ijson
+# import ijson
 import pandas as pd
 
 from random import randint
@@ -94,6 +94,7 @@ def from_file(file_path, file_type="csv", separator=",", compression="infer", en
 
 
 #Lazily reads a large JSON file in chunks and processes each chunk using a custom function.
+#DEPR
 def __json_chunk_iterator(file_path, encoding=None, chunk_size=1000, process_func=None):
 
     reader = open if not file_path.endswith(".gz") else gzip.open
@@ -149,6 +150,7 @@ def __mem_check_line(file_path, sample_count=1000, skip_header=False):
 
 
 
+#some issues for small files? needs testing
 def estimate_chunks(file_path, designated_memorybytes, load=0.5):
     assert path.isfile(file_path)
     assert 0 < load < 1
