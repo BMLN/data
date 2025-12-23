@@ -155,7 +155,7 @@ def estimate_chunks(file_path, designated_memorybytes, load=0.5):
     assert path.isfile(file_path)
     assert 0 < load < 1
 
-    sample_count = min(path.getsize(file_path) / 1000, 10000)
+    sample_count = int(min(path.getsize(file_path) / 1000, 10000))
     sampling = __mem_check_line(file_path, sample_count)
     estimation = (designated_memorybytes * load) /sampling[0]
     
