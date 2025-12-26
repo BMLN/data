@@ -175,3 +175,16 @@ class CsvDataframeProcessor(FileProcessor):
 
         else:
             yield from pd.read_csv(file, chunksize=batch_size)
+
+
+class JsonlDataframeProcessor(FileProcessor):
+    
+    @classmethod
+    @override
+    def file_loader(cls, file, batch_size=None):
+        
+        if not batch_size:
+            yield ( pd.read_json(file, lines=True) )
+
+        else:
+            yield from pd.read_json(file, lines=True, chunksize=batch_size)
