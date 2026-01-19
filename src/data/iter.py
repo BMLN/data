@@ -2,7 +2,7 @@ from tempfile import NamedTemporaryFile
 from os import replace, remove, path
 from shutil import copy
 
-
+from io import TextIOWrapper
 import pandas as pd
 
 from contextlib import contextmanager
@@ -166,14 +166,14 @@ class PandasProcessor(FileProcessor):
     @classmethod
     @override
     def file_loader(cls, file, batch_size=None):
-
-        if file.endswith(".csv"):
+        name = file.name if isinstance(file, TextIOWrapper) else file
+        if name.endswith(".csv"):
             if not batch_size:
                 yield ( pd.read_csv(file) )
             else:
                 yield from pd.read_csv(file, chunksize=batch_size)
 
-        elif "json" in file.split(".")[-1]:
+        elif "json" in name.split(".")[-1]:
             if not batch_size:
                 yield ( pd.read_json(file) )
 
