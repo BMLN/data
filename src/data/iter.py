@@ -27,19 +27,22 @@ def chunk_out(file_path, file_out_path=None, chunk=2000, has_header=True):
 
 
     with NamedTemporaryFile("w", encoding="utf-8", dir=path.dirname(file_path), delete=False) as file_chunked, open(file_path, "r", encoding="utf-8") as file_in, open(file_out_path, "a", encoding="utf-8") as file_out:
+        #file_chunked == the input_file with the next chunk chunked out
+        #file_in == file to chunk out from
+        #file_out == the chunk
+        
         i = -1 #so bufferror can be catched
 
         for i, line in enumerate(file_in):
-            if i == 0:
+            
+            if i == 0 and (has_header and not path.getsize(file_out_path)):
                 file_chunked.write(line)
-                if has_header and path.getsize(file_out_path):
-                    continue
-
-            elif i > chunk:
-                break    
 
             file_out.write(line)
-        
+
+            if i + (0 if has_header else 1) >= chunk:
+                break
+
         if i < 1:
             raise BufferError("nothing to chunk from original file")
 
@@ -193,6 +196,8 @@ class CsvDataframeProcessor(FileProcessor):
 
         else:
             yield from pd.read_csv(file, chunksize=batch_size)
+
+
 
 
 class JsonlDataframeProcessor(FileProcessor):
