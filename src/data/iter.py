@@ -51,14 +51,8 @@ def chunk_out(file_path, file_out_path=None, chunk=2000, has_header=True):
                     
     replace(file_chunked.name, file_path)
 
-    try:
-        yield (chunked_file := open(file_out_path, "r", encoding="utf-8"))
-        
-    finally:
-        if path.isfile(file_chunked.name):
-            remove(file_chunked.name)
-            
-        chunked_file.close()
+
+    yield file_out_path
         
 
 
@@ -169,14 +163,13 @@ class PandasProcessor(FileProcessor):
     @classmethod
     @override
     def file_loader(cls, file, batch_size=None):
-        name = file.name if isinstance(file, TextIOWrapper) else file
-        if name.endswith(".csv"):
+        if file.endswith(".csv"):
             if not batch_size:
                 yield ( pd.read_csv(file) )
             else:
                 yield from pd.read_csv(file, chunksize=batch_size)
 
-        elif "json" in name.split(".")[-1]:
+        elif "json" in file.split(".")[-1]:
             if not batch_size:
                 yield ( pd.read_json(file) )
 

@@ -98,7 +98,8 @@ class ChunkoutTest(unittest.TestCase):
         while True:
             try:
                 with to_test(chunked, chunk, chunk=2, has_header=True) as file_chunk:
-                    result.append(file_chunk.readlines())
+                    with open(file_chunk, "r", encoding="utf-8") as f:
+                        result.append(f.readlines())
                 remove(chunk)
 
             except BufferError:
